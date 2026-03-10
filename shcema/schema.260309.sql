@@ -24,8 +24,8 @@ CREATE TABLE employee (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 );
 
-CREATE TABLE job_opening (
-    job_id INT PRIMARY KEY AUTO_INCREMENT,
+CREATE TABLE job_description (
+    job_description_id INT PRIMARY KEY AUTO_INCREMENT,
     title VARCHAR(100),
     department_id INT,
     base_location VARCHAR(100),
@@ -51,8 +51,8 @@ CREATE TABLE candidate (
 );
 
 CREATE TABLE job_application (
-    application_id INT PRIMARY KEY AUTO_INCREMENT,
-    job_id INT NOT NULL,
+    job_application_id INT PRIMARY KEY AUTO_INCREMENT,
+    job_description_id INT NOT NULL,
     candidate_id INT NOT NULL,
     -- 严格对应政策中的流转状态
     job_application_stage ENUM(
@@ -68,14 +68,13 @@ CREATE TABLE job_application (
         'Rejected',            -- 流程终止（未通过）
         'Withdrawn'            -- 候选人主动放弃（包含薪资问题或毁约）
     ) DEFAULT 'Pending_Assessment',
-    interview_id_list INT[] DEFAULT [],
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE interview (
     interview_id INT PRIMARY KEY AUTO_INCREMENT,
-    application_id INT NOT NULL,
+    job_application_id INT NOT NULL,
     -- 面试维度
     round_number INT NOT NULL CHECK (round_number IN (1, 2, 3, 4)), -- 1: Peer, 2: Manager, 3: CTO/CEO, 4: HRBP
     interviewer_id INT NOT NULL, -- 指派的面试官 (Peer/主管/CTO/HRBP)
@@ -95,7 +94,7 @@ CREATE TABLE interview (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE employee_okr_record (
+CREATE TABLE okr (
     employee_id INT NOT NULL,
     year YEAR NOT NULL,
     quarter ENUM('Q1', 'Q2', 'Q3', 'Q4') NOT NULL,
@@ -113,7 +112,7 @@ CREATE TABLE employee_okr_record (
     PRIMARY KEY (employee_id, year, quarter),
 );
 
-CREATE TABLE employee_salary_record (
+CREATE TABLE salary (
     employee_id INT NOT NULL,
     year YEAR NOT NULL,
     month INT NOT NULL CHECK (month in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)),
@@ -132,7 +131,7 @@ CREATE TABLE employee_salary_record (
     PRIMARY KEY (employee_id, year, month),
 );
 
-CREATE TABLE erp_resource_approval_request (
+CREATE TABLE resource_request (
     resource_request_id INT PRIMARY KEY AUTO_INCREMENT,
     employee_id INT NOT NULL,
     -- 流程整体状态（对应政策中的流转）
@@ -148,12 +147,11 @@ CREATE TABLE erp_resource_approval_request (
     amount INT NOT NULL,
     detail_description TEXT, -- 申请详情
     --
-    approval_round_id_list INT[] DEFAULT [],
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE erp_leave_request (
+CREATE TABLE leave_request (
     leave_request_id INT PRIMARY KEY AUTO_INCREMENT,
     -- 流程整体状态（对应政策中的流转）
     approval_request_stage ENUM(
@@ -179,9 +177,8 @@ CREATE TABLE erp_leave_request (
     end_date DATE NOT NULL,
     total_days INT NOT NULL CHECK (total_days >= 1), -- 政策：最小单位为1个工作日
     detail_description TEXT, -- 申请详情
-    material_url_list VARCHAR(255)[] DEFAULT [], -- 证明材料
+    material_link TEXT, -- 证明材料链接
     --
-    approval_round_id_list INT[] DEFAULT [],
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -233,8 +230,8 @@ CREATE TABLE manufacturer (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
-CREATE TABLE camera (
-    camera_id INT PRIMARY KEY AUTO_INCREMENT,
+CREATE TABLE camera_sku (
+    camera_sku_id INT PRIMARY KEY AUTO_INCREMENT,
     brand ENUM(
         'Sony',         -- 索尼：Alpha 系列、Cinema Line
         'Canon',        -- 佳能：EOS R/EOS EF 系列
@@ -275,8 +272,8 @@ CREATE TABLE camera (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE lens (
-    lens_id INT PRIMARY KEY AUTO_INCREMENT,
+CREATE TABLE lens_sku (
+    lens_sku_id INT PRIMARY KEY AUTO_INCREMENT,
     brand ENUM(
         'Sony',         -- 索尼
         'Canon',        -- 佳能
@@ -316,4 +313,203 @@ CREATE TABLE lens (
     filter_size_mm INT,       -- 滤镜口径，方便客户配滤镜
     has_stabilization BOOLEAN DEFAULT FALSE, -- 是否内置光学防抖 (OSS/IS/VR)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE product (
+    product_id INT PRIMARY KEY AUTO_INCREMENT,
+    sku_type ENUM(
+        'Camera',         -- 相机
+        'Lens',           -- 镜头
+    ) NOT NULL, 
+    sku_id INT NOT NULL, 
+    product_name VARCHAR(255) NOT NULL, -- 冗余名称方便展示
+    stock_quantity INT NOT NULL DEFAULT 1,
+
+    manufacturer_suggested_retail_price DECIMAL(12, 2) NOT NULL, -- 制造商建议零售价
+    price DECIMAL(12, 2) NOT NULL, -- 当前销售价格
+    is_special_offer BOOLEAN DEFAULT FALSE, -- 是否为特价产品（政策：特价不享受会员折扣）
+    is_returnable BOOLEAN DEFAULT TRUE, -- 对应政策：明确标注不在退货范围内的商品
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+);
+
+CREATE TABLE order (
+    order_id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT NOT NULL,
+
+    -- 对应政策中的 8 种状态
+    order_status ENUM(
+        'Submitted', 
+        'Paid', 
+        'Shipped', 
+        'Delivered', 
+        'Completed', 
+        'Requesting_Refund', 
+        'Refunded', 
+        'Canceled'
+    ) DEFAULT 'Submitted',
+    
+    -- 购物金额计算
+    product_amount DECIMAL(12, 2) NOT NULL, -- 产品
+    shipping_fee DECIMAL(12, 2) DEFAULT 0.00,    -- 运费（金级会员免运费）
+    handling_fee_when_purchased DECIMAL(12, 2) DEFAULT 0.00,    -- 银行转账手续费
+    total_amount DECIMAL(12, 2) NOT NULL, -- 最终应付：产品 + 运费 + 手续费
+    -- 退款金额计算
+    product_amount_refunded DECIMAL(12, 2) NOT NULL,
+    shipping_fee_refunded DECIMAL(12, 2) DEFAULT 0.00, -- 质量问题补10刀，无理由为0
+    total_refund_amount DECIMAL(12, 2) NOT NULL, -- 最终退款：产品 + 运费
+    
+    -- 时间线
+    paid_at DATETIME,
+    shipped_at DATETIME,
+    delivered_at DATETIME,
+    completed_at DATETIME,
+    requesting_refund_at DATETIME,
+    refunded_at DATETIME,
+    canceled_at DATETIME,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+);
+
+CREATE TABLE order_item (
+    order_item_id INT PRIMARY KEY AUTO_INCREMENT,
+    order_id INT NOT NULL,
+    product_id INT NOT NULL,
+    -- 下单时的快照
+    unit_price_snapshot DECIMAL(12, 2) NOT NULL, -- 下单时的单价快照
+    is_special_offer_snapshot BOOLEAN, -- 记录下单时是否为特价
+    is_refundable_snapshot BOOLEAN, -- 记录下单时是否为可退货
+    quantity INT NOT NULL,
+    total_item_amount DECIMAL(12, 2) NOT NULL, -- 单品订单金额
+    -- 退货 
+    is_refunded BOOLEAN DEFAULT FALSE,
+    refunded_quantity INT DEFAULT 0,
+    --
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+);
+
+CREATE TABLE payment (
+    payment_id INT PRIMARY KEY AUTO_INCREMENT,
+    order_id INT NOT NULL,
+
+    payment_method ENUM(
+        'Online', 
+        'Bank_Transfer'
+    ) NOT NULL,
+
+    payment_status ENUM(
+        'Waiting_For_Confirmation', 
+        'Confirmed', 
+        'Fail_To_Confirm',
+        'Canceled'
+    ) DEFAULT 'Waiting_For_Confirmation',
+    
+    -- 转账逻辑
+    transaction_id VARCHAR(100), -- 第三方支付单号
+    send_amount DECIMAL(12, 2) NOT NULL,
+    sender_name VARCHAR(100),
+    sender_account_number VARCHAR(100),
+    receive_amount DECIMAL(12, 2) NOT NULL,
+    receiver_name VARCHAR(100) DEFAULT 'Molly Digital Inc.',
+    receiver_account_number VARCHAR(100) DEFAULT '99000000000000000000000000000000',
+    handling_fee DECIMAL(12, 2) DEFAULT 0.00,
+
+    -- 确认收款
+    confirm_deadline DATETIME, -- +3个自然日
+    confirmed_by_employee_id INT, -- 政策：11:00 确认收款的工作人员 ID
+
+    -- 时间线
+    waiting_for_confirmation_at DATETIME,
+    confirmed_at DATETIME,
+    failed_at DATETIME,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+);
+
+CREATE TABLE shipping (
+    shipping_id INT PRIMARY KEY AUTO_INCREMENT,
+    order_id INT NOT NULL,
+
+    shipping_method ENUM(
+        'FedEx_Standard',
+        'FedEx_Next_Day'
+    ) NOT NULL,
+
+    shipping_status ENUM(
+        'Ordered',
+        'Shipped',
+        'Delivered',
+        'Canceled'
+    ) DEFAULT 'Ordered',
+
+    tracking_number VARCHAR(100), -- 第三方物流单号
+    sender_name VARCHAR(100),
+    sender_phone VARCHAR(50),
+    sender_address TEXT,
+    receiver_name VARCHAR(100),
+    receiver_phone VARCHAR(50),
+    receiver_address TEXT,
+
+    -- 时间线
+    ordered_at DATETIME,
+    shipped_at DATETIME,
+    delivered_at DATETIME,
+    canceled_at DATETIME,
+
+    -- 
+    shipping_fee DECIMAL(12, 2),
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+);
+
+CREATE TABLE refund (
+    refund_id INT PRIMARY KEY AUTO_INCREMENT,
+    order_item_id INT NOT NULL,
+    order_id INT NOT NULL,
+    payment_id INT NOT NULL, -- 退回原支付方式
+
+    refund_type ENUM(
+        'No_Reason', 
+        'Quality_Issue'
+    ) NOT NULL,
+
+    refund_status ENUM(
+        'Requesting_Refund', 
+        'Item_Received_and_Inspected',
+        'Passed_Inspection',
+        'Refunded',
+        'Failed_Inspection'
+    ) DEFAULT 'Requesting_Refund',
+    
+    -- 仓库检查记录：是否影响二次销售，用于退款金额计算
+    inspection_notes TEXT,
+
+    -- 转账逻辑
+    transaction_id VARCHAR(100), -- 第三方支付单号
+    send_amount DECIMAL(12, 2) NOT NULL,
+    sender_name VARCHAR(100) DEFAULT 'Molly Digital Inc.',
+    sender_account_number VARCHAR(100) DEFAULT '99000000000000000000000000000000',
+    receive_amount DECIMAL(12, 2) NOT NULL,
+    receiver_name VARCHAR(100) DEFAULT,
+    receiver_account_number VARCHAR(100),
+    handling_fee DECIMAL(12, 2) DEFAULT 0.00,
+    
+    -- 确认退款
+    refunded_deadline DATETIME,
+    refunded_by_employee_id INT,
+
+    -- 时间线
+    requesting_refund_at DATETIME,
+    item_received_and_inspected_at DATETIME,
+    passed_inspection_at DATETIME,
+    refunded_at DATETIME,
+    failed_inspection_at DATETIME,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 );
