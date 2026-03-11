@@ -203,6 +203,7 @@ CREATE TABLE erp_leave_balance (
     tenure_annual_days INT DEFAULT 1,
     paid_sick_days INT DEFAULT 5,
     year YEAR,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (employee_id, year),
 );
@@ -235,86 +236,71 @@ CREATE TABLE manufacturer (
 
 CREATE TABLE camera_sku (
     camera_sku_id INT PRIMARY KEY AUTO_INCREMENT,
+    
     brand ENUM(
-        'Sony',         -- 索尼：Alpha 系列、Cinema Line
-        'Canon',        -- 佳能：EOS R/EOS EF 系列
-        'Nikon',        -- 尼康：Z 系列、D 系列
-        'Fujifilm',     -- 富士：X 系列、GFX 系列
-        'Panasonic',    -- 松下：LUMIX S/G 系列
-        'Leica',        -- 徕卡：M/SL/Q 系列
-        'Hasselblad',   -- 哈苏：中画幅系统
+        'Agfa', 'Canon', 'Casio', 'Contax', 'DJI', 'DxO Labs', 'Epson', 
+        'Fujifilm', 'GoPro', 'Hasselblad', 'Holga', 'HP', 'Kodak', 
+        'Konica Minolta', 'Kyocera', 'Leica', 'Lytro', 'Nikon', 
+        'OM System / Olympus', 'Panasonic', 'Pentax', 'Pixii', 
+        'Ricoh', 'Samsung', 'Sanyo', 'SeaLife', 'Sigma', 'Sony', 
+        'Toshiba', 'YI', 'Zeiss'
     ) NOT NULL,
-    model_name VARCHAR(100) NOT NULL,
-    sensor_size ENUM(
-        'Full Frame',        -- 全画幅 (35mm)
-        'APS-C',             -- 半画幅
-        'Medium Format',     -- 中画幅
-        'Micro Four Thirds', -- M43 系统
-        '1-inch',            -- 1英寸（黑卡/卡片机）
-    ) NOT NULL,
-    body_type ENUM(
-        'Mirrorless',   -- 无反/微单：主流趋势
-        'DSLR',         -- 单反：传统光学取景
-        'Compact',      -- 固定镜头相机/卡片机
-        'Rangefinder',  -- 旁轴相机：如徕卡M
-        'Cinema'        -- 专业电影机：如 FX6, C70
-    ) NOT NULL,
-    mount_type ENUM(
-        'E-Mount',      -- 索尼 E
-        'RF-Mount',     -- 佳能 RF
-        'Z-Mount',      -- 尼康 Z
-        'X-Mount',      -- 富士 X
-        'L-Mount',      -- 马徕松 L 联盟
-        'M-Mount',      -- 徕卡 M
-        'GF-Mount',     -- 富士 GFX
-        'EF-Mount',     -- 佳能单反 EF
-        'F-Mount',      -- 尼康单反 F
-        'PL-Mount'      -- 电影工业常用 PL
-    ) NOT NULL,
-    max_resolution INT, -- 单位为百万像素(MP)，如 61 代表 6100万像素，方便排序
+    
+    model_name TEXT,
+
+    body_type TEXT,
+    max_resolution TEXT,
+    effective_pixels TEXT,
+    sensor_size TEXT,
+    sensor_type TEXT,
+    iso TEXT,
+    lens_mount TEXT,
+    focal_length_mult TEXT,
+    articulated_lcd TEXT,
+    screen_size TEXT,
+    screen_dots TEXT,
+    max_shutter_speed TEXT,
+    format TEXT,
+    storage_types TEXT,
+    usb TEXT,
+    weight_inc_batteries TEXT,
+    dimensions TEXT,
+    gps TEXT,
+
+    announced_at DATETIME,
+    description TEXT,
+    
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+
 CREATE TABLE lens_sku (
     lens_sku_id INT PRIMARY KEY AUTO_INCREMENT,
+    
     brand ENUM(
-        'Sony',         -- 索尼
-        'Canon',        -- 佳能
-        'Nikon',        -- 尼康
-        'Fujifilm',     -- 富士
-        'Sigma',        -- 适马：Art/Contemporary 系列
-        'Tamron',       -- 腾龙
-        'Zeiss',        -- 蔡司
-        'Viltrox',      -- 唯卓仕
-        'Other'
+        'Agfa', 'Canon', 'Casio', 'Contax', 'DJI', 'DxO Labs', 'Epson', 
+        'Fujifilm', 'GoPro', 'Hasselblad', 'Holga', 'HP', 'Kodak', 
+        'Konica Minolta', 'Kyocera', 'Leica', 'Lytro', 'Nikon', 
+        'OM System / Olympus', 'Panasonic', 'Pentax', 'Pixii', 
+        'Ricoh', 'Samsung', 'Sanyo', 'SeaLife', 'Sigma', 'Sony', 
+        'Toshiba', 'YI', 'Zeiss', 'Tamron', 'Viltrox'
     ) NOT NULL,
-    model_name VARCHAR(100) NOT NULL,
-    lens_type ENUM(
-        'Prime',        -- 定焦镜头
-        'Zoom',         -- 变焦镜头
-        'Macro',        -- 微距镜头
-        'Fisheye',      -- 鱼眼镜头
-        'Tilt-Shift',   -- 移轴镜头
-        'Anamorphic'    -- 电影变形宽银幕镜头
-    ) NOT NULL,
-    mount_type ENUM(
-        'E-Mount',      -- 索尼 E
-        'RF-Mount',     -- 佳能 RF
-        'Z-Mount',      -- 尼康 Z
-        'X-Mount',      -- 富士 X
-        'L-Mount',      -- 马徕松 L 联盟
-        'M-Mount',      -- 徕卡 M
-        'GF-Mount',     -- 富士 GFX
-        'EF-Mount',     -- 佳能单反 EF
-        'F-Mount',      -- 尼康单反 F
-        'PL-Mount'      -- 电影工业常用 PL
-    ) NOT NULL,
-    focal_length_min_mm DECIMAL(5,1),  -- 最小焦距（单位mm），如 24.0
-    focal_length_max_mm DECIMAL(5,1),  -- 最大焦距（单位mm），如 70.0；定焦镜头两者相等
-    aperture_min_f DECIMAL(4,2),       -- 最小光圈（最大通光量），如 1.20
-    aperture_max_f DECIMAL(4,2),       -- 最大光圈（最小通光量），如 22.00
-    filter_size_mm INT,       -- 滤镜口径，方便客户配滤镜
-    has_stabilization BOOLEAN DEFAULT FALSE, -- 是否内置光学防抖 (OSS/IS/VR)
+    
+    model_name TEXT,
+
+    lens_type TEXT,
+    focal_length TEXT,
+    image_stab TEXT,   
+    lens_mount TEXT,
+    max_aperture TEXT,
+    min_aperture TEXT,
+    min_focus TEXT,
+    weight TEXT,
+    length TEXT,
+
+    announced_at DATETIME,
+    description TEXT,
+    
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
