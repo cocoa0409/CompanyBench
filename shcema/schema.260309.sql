@@ -11,15 +11,17 @@ CREATE TABLE employee (
     employee_id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
+    phone VARCHAR(50) UNIQUE NOT NULL,
     title VARCHAR(50),
     gender ENUM('Male', 'Female', 'Other'),
     department_id INT,
-    supervisor_employee_id INT, -- 直属上级 (+1)
-    base_salary DECIMAL(12, 2), -- 税前月薪
-    onboard_at DATE NOT NULL,
-    quit_at DATE,
+    responsibility TEXT,
+    supervisor_employee_id INT, -- 直属上级
+    monthly_salary DECIMAL(12, 2), -- 税前月薪
     permissions JSON, -- 存储细粒度权限
     employee_status ENUM('Active', 'Resigned') DEFAULT 'Active',
+    onboard_at DATE NOT NULL,
+    quit_at DATE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 );
@@ -44,8 +46,6 @@ CREATE TABLE candidate (
     name VARCHAR(100),
     email VARCHAR(100) UNIQUE,
     resume_content TEXT,
-    lock_until DATE, -- 用于处理“冷静期”锁定
-    last_rejection_reason VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -56,40 +56,45 @@ CREATE TABLE job_application (
     candidate_id INT NOT NULL,
     -- 严格对应政策中的流转状态
     job_application_stage ENUM(
-        'Pending_Assessment', -- 简历入库待评估
-        'Interview_Scheduled', -- 约面
-        'Round_1_Completed',    -- 完成一面
-        'Round_2_Completed',    -- 完成二面
-        'Round_3_Completed',    -- 完成三面
-        'Round_4_Completed',    -- 完成四面（可跳过）
-        'Salary_Negotiation',  -- 谈薪
-        'Pending_Onboarding',  -- 待入职
-        'Onboarded',           -- 入职
-        'Rejected',            -- 流程终止（未通过）
-        'Withdrawn'            -- 候选人主动放弃（包含薪资问题或毁约）
-    ) DEFAULT 'Pending_Assessment',
+        'Assessing', -- 评估中
+        'Interviewing', -- 面试中
+        'Negotiating',  -- 谈薪中
+        'Accepted',  -- 已接受offer
+        'Rejected',    -- 未通过
+        'Onboarded', -- 已入职
+        'Withdrawn', -- 候选人主动放弃
+    ) DEFAULT 'Assessing',
+
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE schedule (
+    schedule_id INT PRIMARY KEY AUTO_INCREMENT,
+    employee_id INT NOT NULL,
+    
+    content TEXT,
+    
+    start_datetime DATETIME NOT NULL,
+    end_datetime DATETIME NOT NULL,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 );
 
 CREATE TABLE interview (
     interview_id INT PRIMARY KEY AUTO_INCREMENT,
     job_application_id INT NOT NULL,
+
     -- 面试维度
-    round_number INT NOT NULL CHECK (round_number IN (1, 2, 3, 4)), -- 1: Peer, 2: Manager, 3: CTO/CEO, 4: HRBP
-    interviewer_id INT NOT NULL, -- 指派的面试官 (Peer/主管/CTO/HRBP)
-    -- 状态流转
-    -- Interview_Scheduled: 已排期待面试 | Completed: 已评分结束 | Cancelled: 取消 | Skipped: 跳过本轮
-    interview_status ENUM('Interview_Scheduled', 'Completed', 'Cancelled', 'Skipped') DEFAULT 'Interview_Scheduled',
-    -- 时间管理
-    scheduled_at DATETIME NOT NULL, -- 约定的起始时间
-    start_at DATETIME, -- 实际开始时间
-    end_at DATETIME, -- 面试结束时间（用于触发2个工作日评分提醒）
-    -- 评分结果
+    interviewer_employee_id INT NOT NULL, -- 指派的面试官 ID
+    interview_status ENUM('Scheduled', 'Completed', 'Cancelled') DEFAULT 'Scheduled',
+    schedule_id INT NOT NULL,
+
     score DECIMAL(3, 2) CHECK (score IN (3.0, 3.25, 3.5, 3.75, 4.0)), -- 强制约束分值
     feedback TEXT, -- 面试评价
+
     scored_at DATETIME, -- 实际提交评分的时间
-    --
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -177,7 +182,6 @@ CREATE TABLE leave_request (
     end_date DATE NOT NULL,
     total_days INT NOT NULL CHECK (total_days >= 1), -- 政策：最小单位为1个工作日
     detail_description TEXT, -- 申请详情
-    material_link TEXT, -- 证明材料链接
     --
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -214,8 +218,7 @@ CREATE TABLE customer (
     phone VARCHAR(50) NOT NULL,
     identification_number VARCHAR(100) UNIQUE NOT NULL,
     addresses TEXT[] DEFAULT [],
-    -- Bronze: >500刀享5%折扣 | Silver: >2000刀享10%折扣 | Gold: >4000刀享20%折扣+免运费
-    membership_tier ENUM('None', 'Bronze', 'Silver', 'Gold') DEFAULT 'None',
+    membership_tier ENUM('None', 'Platinum', 'Black Gold') DEFAULT 'None',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -469,9 +472,7 @@ CREATE TABLE shipping (
 
 CREATE TABLE refund (
     refund_id INT PRIMARY KEY AUTO_INCREMENT,
-    order_item_id INT NOT NULL,
     order_id INT NOT NULL,
-    payment_id INT NOT NULL, -- 退回原支付方式
 
     refund_type ENUM(
         'No_Reason', 
@@ -510,6 +511,93 @@ CREATE TABLE refund (
     refunded_at DATETIME,
     failed_inspection_at DATETIME,
 
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+);
+
+CREATE TABLE ticket (
+    ticket_id INT PRIMARY KEY AUTO_INCREMENT,
+    customer_id INT NOT NULL,
+    order_id INT, -- 可选，关联特定订单
+    assignee_employee_id INT, -- 处理工单的员工（客服/仓库人员）
+    
+    -- 工单分类：产品咨询、订单问题、技术支持、投诉
+    ticket_type ENUM(
+        'Product_Inquiry', 
+        'Order', 
+        'Technical_Support',
+        'Complaint', 
+    ) DEFAULT 'Product_Inquiry',
+
+    -- 工单状态
+    ticket_status ENUM(
+        'Open',         -- 开启（等待处理）
+        'Resolved',     -- 已解决
+        'Closed'        -- 已关闭
+    ) DEFAULT 'Open',
+
+    -- 优先级：根据会员等级或问题严重程度分配
+    priority ENUM(
+        'Low', 
+        'Medium', 
+        'High', 
+        'Urgent'
+    ) DEFAULT 'Medium',
+
+    title VARCHAR(255) NOT NULL, -- 工单标题/简述
+    content TEXT NOT NULL,       -- 客户描述的问题详情
+    response TEXT NOT NULL,      -- 客服回复
+
+    -- 时间线
+    open_at DATETIME,
+    resolved_at DATETIME,
+    closed_at DATETIME,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE email (
+    email_id INT PRIMARY KEY AUTO_INCREMENT,
+    sender_email VARCHAR(100) NOT NULL,
+    receiver_email VARCHAR(100) NOT NULL,
+    cc_emails TEXT, -- 对应政策：招聘时邮件需抄送用人部门主管
+    
+    subject VARCHAR(255) NOT NULL,
+    body_content TEXT NOT NULL,
+
+    sent_at DATETIME,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE document (
+    document_id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(255) NOT NULL,
+    
+    -- 内容存储：支持 Markdown 或 HTML 格式
+    content_body LONGTEXT NOT NULL,
+    
+    -- 知识库分类
+    -- Internal: 内部文档（仅员工可见）
+    -- External: 外部文档（客户、会员、访客可见）
+    document_type ENUM(
+        'Internal', 
+        'External'
+    ) NOT NULL DEFAULT 'External',
+    
+    -- 文档状态：草稿、已发布、已归档（废弃）
+    document_status ENUM(
+        'Published', 
+        'Archived'
+    ) DEFAULT 'Draft',
+    
+    -- 权限与责任制
+    author_employee_id INT NOT NULL, -- 撰写人
+
+    -- SEO 与 检索
+    slug VARCHAR(100) UNIQUE, -- 用于 URL 展示，如 /kb/return-policy
+    tags JSON,                -- 存储标签，如 ["相机", "二手", "S级"]
+    
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 );
