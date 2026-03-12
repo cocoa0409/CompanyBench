@@ -23,10 +23,12 @@ CREATE TABLE employee (
         'Other'   -- 其他
     ), -- 性别
     department_id INT, -- 所属部门ID
-    responsibility TEXT, -- 岗位职责描述
     supervisor_employee_id INT, -- 直属上级的员工ID
-    monthly_salary DECIMAL(12, 2), -- 税前月薪
-    permissions JSON, -- 系统权限（JSON格式存储细粒度权限）
+
+    responsibility TEXT, -- 岗位职责描述
+    monthly_salary DECIMAL(12, 2), -- 税前月薪 (严格保密)
+    permissions JSON, -- 系统权限 (严格保密)
+
     employee_status ENUM(
         'Active',   -- 在职
         'Resigned'  -- 已离职
@@ -444,8 +446,7 @@ CREATE TABLE order (
     handling_fee_when_purchased DECIMAL(12, 2) DEFAULT 0.00, -- 银行转账手续费
     total_amount DECIMAL(12, 2) NOT NULL, -- 订单应付总额（产品费用 + 运费 + 手续费）
     product_amount_refunded DECIMAL(12, 2) NOT NULL, -- 退款产品金额
-    shipping_fee_refunded DECIMAL(12, 2) DEFAULT 0.00, -- 退款运费补偿
-    total_refund_amount DECIMAL(12, 2) NOT NULL, -- 退款总额（产品退款 + 运费补偿）
+    total_refund_amount DECIMAL(12, 2) NOT NULL, -- 退款总额（产品退款）
     
     paid_at DATETIME, -- 支付确认时间
     shipped_at DATETIME, -- 发货时间
@@ -638,8 +639,6 @@ CREATE TABLE email (
 
     email_status ENUM(
         'Sent', -- 已发送
-        'Failed' -- 发送失败
-        'Revoked' -- 已撤回
     ) DEFAULT 'Sent', -- 邮件状态
 
     sent_at DATETIME, -- 发送时间
@@ -660,8 +659,7 @@ CREATE TABLE document (
     
     document_status ENUM(
         'Published', -- 已发布
-        'Archived'   -- 已归档
-    ) DEFAULT 'Draft', -- 文档状态
+    ) DEFAULT 'Published', -- 文档状态
     
     author_employee_id INT NOT NULL, -- 文档撰写人的员工ID
 

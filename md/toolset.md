@@ -1,127 +1,128 @@
 # Molly Digital Toolset Design
 
-12 tools, 63 actions. Each action = a real business operation performed by a specific role.
+13 tools, 59 actions.
 
-**Role Legend**: Employee, Supervisor (department manager), HR/HRBP, Finance, Ops (operations/warehouse), CS (customer service), Customer, Candidate, System (automated)
+## 1. employee (5 actions)
 
-## 1. employee (6 actions)
+| Action | Description |
+|---|---|
+| `search_employees` | Query employees |
+| `create_employee` | Create employee record: assign department, supervisor, salary, permissions |
+| `update_employee` | Update employee record (title, contact, department transfer, salary adjustment, mark resigned) |
+| `search_departments` | Query departments with manager and HRBP info |
+| `update_department` | Update department record (change manager or HRBP) |
 
-| Action | Actor | Description |
-|---|---|---|
-| `search_employees` | Employee | Search employees by name, department, title, or status |
-| `get_employee` | Employee | Get employee details (supervisor, salary, permissions, leave balance) |
-| `onboard_employee` | HR | Onboard a new hire: create record, assign department, supervisor, salary |
-| `update_employee` | HR | Update employee info (title, contact, department transfer, salary adjustment) |
-| `search_departments` | Employee | Search departments with manager and HRBP info |
-| `update_department` | HR | Change department manager or HRBP |
+## 2. recruitment (13 actions)
 
-## 2. recruitment (11 actions)
-
-| Action | Actor | Description |
-|---|---|---|
-| `search_jds` | Employee | Search job descriptions by department, status, or keyword |
-| `post_jd` | Supervisor | Publish a JD when headcount is available (salary range = monthly x 16, HRBP as contact) |
-| `update_jd` | Supervisor | Update JD content or close the position |
-| `search_candidates` | HR | Search candidates by name, email, or status |
-| `register_candidate` | HR | Register a new candidate with resume |
-| `search_applications` | HR | Search job applications by status, JD, or candidate |
-| `apply_job` | Candidate | Apply to a JD (one application binds to exactly one JD) |
-| `screen_resume` | Supervisor | Review resume and decide: proceed to interview or reject |
-| `arrange_interview` | HR | Schedule interview round |
-| `submit_interview_feedback` | Supervisor/HR | Interviewer submits score (3.0/3.25/3.5/3.75/4.0) and feedback within 2 business days |
-| `make_offer` | HR | Negotiate salary (max 120% of JD upper limit); candidate accepts or rejects |
+| Action | Description |
+|---|---|
+| `search_jds` | Query job descriptions by department, status, or keyword |
+| `create_jd` | Create JD record (salary range = monthly x 16, HRBP as contact) |
+| `update_jd` | Update JD content or set status to Closed |
+| `search_candidates` | Query candidates by name, email, or status |
+| `create_candidate` | Create candidate record with resume |
+| `update_candidate` | Update candidate record (status, resume, contact info) |
+| `search_applications` | Query job applications by status, JD, or candidate |
+| `create_application` | Create application record binding candidate to one JD |
+| `update_application` | Update application status (Assessing / Interviewing / Negotiating / Accepted / Rejected / Onboarded / Withdrawn) |
+| `search_interviews` | Query interview records by application, interviewer, or status |
+| `create_interview` | Create interview record and schedule event; assign interviewer per round (R1=supervisor, R2=superior, R3=HRBP) |
+| `update_interview` | Update interview record (reschedule, cancel, change interviewer) |
+| `submit_interview_feedback` | Record interviewer's score (3.0/3.25/3.5/3.75/4.0) and feedback to interview record |
 
 ## 3. schedule (3 actions)
 
-| Action | Actor | Description |
-|---|---|---|
-| `search_events` | Employee | Search events by employee, time range, or status |
-| `create_event` | Employee | Create a schedule event |
-| `update_event` | Employee | Reschedule or cancel an event |
+| Action | Description |
+|---|---|
+| `search_events` | Query events by employee, time range, or status |
+| `create_event` | Create a schedule event record |
+| `update_event` | Update event time/content or set status to Cancelled |
 
 ## 4. okr (4 actions)
 
-| Action | Actor | Description |
-|---|---|---|
-| `get_okr` | Employee | View OKR by employee, year, quarter, or status |
-| `set_okr_goal` | Employee | Set quarterly objectives in consultation with supervisor |
-| `submit_okr_review` | Employee | Submit end-of-quarter review summary |
-| `rate_okr` | Supervisor | Rate employee performance: S (2.0) / A (1.6) / B (1.0) / C (0.8); supervisor's own OKR rated by their superior |
+| Action | Description |
+|---|---|
+| `search_okrs` | Query OKR records by employee, year, quarter, or status |
+| `create_okr` | Create OKR record with quarterly objectives |
+| `submit_okr_review` | Write end-of-quarter review summary to OKR record |
+| `submit_okr_rating` | Write performance rating (S/A/B/C) to employee's OKR record |
 
-## 5. salary (3 actions)
+## 5. salary (1 action)
 
-| Action | Actor | Description |
-|---|---|---|
-| `get_salary` | Employee | View salary records by employee, year/month, or payout status |
-| `generate_payroll` | Finance | Generate monthly salary slip: base + overtime (3x daily) - unpaid leave deductions + year-end bonus (Jan only) |
-| `process_payout` | Finance | Mark salary as paid (on the 15th of the following month) |
+| Action | Description |
+|---|---|
+| `get_salary` | Query salary records by employee, year/month, or payout status |
 
-## 6. approval (6 actions)
+## 6. approval (5 actions)
 
-| Action | Actor | Description |
-|---|---|---|
-| `search_requests` | Employee | Search approval requests (resource + leave, filterable by type and status) |
-| `request_resource` | Employee | Request resource (Laptop/Monitor/Mobile/Token) -> auto-generates approval chain: supervisor -> finance |
-| `request_leave` | Employee | Request leave or overtime; personal leave draws annual leave first, sick leave draws paid sick leave first |
-| `approve_request` | Supervisor/Finance | Approve a pending request (supervisor for leave; supervisor then finance for resource) |
-| `reject_request` | Supervisor/Finance | Reject a pending request with reason |
-| `get_leave_balance` | Employee | Check remaining leave days (statutory annual / tenure annual / paid sick) |
+| Action | Description |
+|---|---|
+| `search_requests` | Query approval requests (resource + leave, filterable by type and status) |
+| `create_resource_request` | Create resource request record (Laptop/Monitor/Mobile/Token); auto-generate approval chain: supervisor -> finance |
+| `create_leave_request` | Create leave/overtime request record; system auto-deducts from annual leave / paid sick leave first |
+| `handle_approval` | Update approval round status (Approved / Rejected / Canceled) |
+| `get_leave_balance` | Query remaining leave days (statutory annual / tenure annual / paid sick) |
 
-## 7. product (5 actions)
+## 7. product (3 actions)
 
-| Action | Actor | Description |
-|---|---|---|
-| `search_products` | Customer/Employee | Search products by brand, type, price range, stock, or keyword |
-| `get_product` | Customer/Employee | Get product details with full SKU specs (camera: sensor/ISO/mount; lens: focal/aperture/mount) |
-| `update_product` | Ops | Update price, stock quantity, special-offer flag, or returnable flag |
-| `search_manufacturers` | CS | Search manufacturer contact info (for warranty referral to customers) |
+| Action | Description |
+|---|---|
+| `search_products` | Query products by brand, type, price range, stock, or keyword |
+| `update_product` | Update product record (price, stock quantity, special-offer flag, returnable flag) |
+| `get_manufacturer` | Retrieve manufacturer contact info for warranty referral |
 
-## 8. customer (4 actions)
+## 8. customer (3 actions)
 
-| Action | Actor | Description |
-|---|---|---|
-| `search_customers` | CS | Search customers by name, email, phone, or membership tier |
-| `get_customer` | CS | Get customer profile (addresses, membership tier, recent spending) |
-| `register_customer` | Customer | Register a new account |
-| `update_customer` | System/CS | Update info or refresh membership tier (past 6-month completed-order spend: >$1k Platinum 10% off, >$6k Black Gold 20% off + free shipping) |
+| Action | Description |
+|---|---|
+| `search_customers` | Query customers by name, email, phone, or membership tier |
+| `create_customer` | Create customer account record |
+| `update_customer` | Update customer record; recalculate membership tier from past-6-month completed-order spend |
 
-## 9. order (11 actions)
+## 9. order (7 actions)
 
-| Action | Actor | Description |
-|---|---|---|
-| `search_orders` | Customer/CS | Search orders by customer, status, or time range |
-| `get_order` | Customer/CS | Get full order details (items, payment, shipping, refund records) |
-| `place_order` | Customer | Place order: snapshot prices, apply membership discount (full-price items only), calculate shipping + handling fee |
-| `cancel_order` | Customer/System | Cancel unpaid order (customer voluntary; system auto-cancels: online 1 day, bank transfer 3 days) |
-| `pay_order` | Customer | Pay via Online (instant) or Bank_Transfer (sends account details email, 3-day deadline) |
-| `confirm_bank_transfer` | Finance | Confirm incoming bank transfers and batch-update order statuses (daily at 11:00) |
-| `ship_order` | Ops | Pack and ship: generate tracking number, FedEx_Standard ($10, 3-5 days) or FedEx_Next_Day ($40) |
-| `deliver_order` | System/Ops | Mark as delivered based on logistics tracking; starts 7-day auto-confirmation countdown |
-| `confirm_receipt` | Customer/System | Customer confirms receipt, or auto-confirms 7 days after delivery; spend counted toward membership tier |
-| `request_refund` | Customer | Request return: 7-day no-reason (unopened/original condition) or 14-day quality issue (from delivery date) |
-| `handle_refund` | Ops | Warehouse inspects return -> pass/fail; if passed, refund to original payment method within 3 days |
+| Action | Description |
+|---|---|
+| `search_orders` | Query orders by customer, status, or time range |
+| `confirm_payment` | Match incoming bank transfer to order; update payment and order status |
+| `cancel_order` | Update order status to Canceled |
+| `confirm_receipt` | Update order status to Completed; add product spend to membership accumulation |
+| `request_refund` | Create refund request record (7-day no-reason / 14-day quality issue from delivery date) |
+| `submit_return_inspect` | Record warehouse inspection result (pass/fail with notes) |
+| `handle_refund` | Call payment API to issue refund to original payment method |
 
-## 10. ticket (3 actions)
+## 10. ticket (4 actions)
 
-| Action | Actor | Description |
-|---|---|---|
-| `search_tickets` | CS | Search tickets by customer, order, type, status, or priority |
-| `open_ticket` | Customer | Open a ticket (Product_Inquiry / Order / Technical_Support / Complaint) |
-| `handle_ticket` | CS | Assign handler, reply to customer, resolve or close ticket |
+| Action | Description |
+|---|---|
+| `search_tickets` | Query tickets by customer, order, type, status, or priority |
+| `create_ticket` | Create ticket record (Product_Inquiry / Order / Technical_Support / Complaint) |
+| `update_ticket` | Assign handler, update ticket status and priority |
+| `submit_ticket_response` | Write customer-service response to ticket record and set status to Resolved |
 
-## 11. email (3 actions)
+## 11. email (6 actions)
 
-| Action | Actor | Description |
-|---|---|---|
-| `search_emails` | Employee | Search emails by sender, receiver, subject, or time |
-| `send_email` | Employee | Send email with optional CC |
-| `revoke_email` | Employee | Revoke a sent email |
+| Action | Description |
+|---|---|
+| `search_emails` | Query emails by sender, receiver, subject, or time |
+| `list_emails` | Get paginated email list for a mailbox |
+| `read_email` | Retrieve full email content by ID |
+| `send_email` | Call email API to send message with optional CC |
+| `forward_email` | Forward an email to new recipients |
+| `reply_email` | Reply to an email (reply-to or reply-all) |
 
 ## 12. document (4 actions)
 
-| Action | Actor | Description |
-|---|---|---|
-| `search_documents` | Employee/Customer | Search documents by title, tags, type (Internal/External), or status |
-| `get_document` | Employee/Customer | Read document content |
-| `publish_document` | Employee | Write and publish a document (Internal for staff, External for customers) |
-| `update_document` | Employee | Edit content, update tags, or archive |
+| Action | Description |
+|---|---|
+| `search_docs` | Query documents by title, tags, type (Internal/External), or status |
+| `list_docs` | Get paginated document list (filterable by type and status) |
+| `read_doc` | Retrieve full document content by ID |
+| `create_doc` | Create and publish document record (Internal for staff, External for customers) |
+
+
+## 13. bash (1 action)
+
+| Action | Description |
+|---|---|
+| `execute` | Run a shell command and return stdout/stderr output; supports calculations, data lookups, and scripting |
