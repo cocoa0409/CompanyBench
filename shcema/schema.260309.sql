@@ -37,8 +37,8 @@ CREATE TABLE employee (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- 记录更新时间
 );
 
-CREATE TABLE job_description (
-    job_description_id INT PRIMARY KEY AUTO_INCREMENT, -- 岗位JD唯一标识
+CREATE TABLE jd (
+    jd_id INT PRIMARY KEY AUTO_INCREMENT, -- 岗位JD唯一标识
     title VARCHAR(100), -- 岗位名称
     department_id INT, -- 所属部门ID
     base_location VARCHAR(100), -- 工作地点
@@ -47,7 +47,7 @@ CREATE TABLE job_description (
     bonus_points TEXT, -- 加分项
     salary_min DECIMAL(12, 2), -- 薪资范围下限（月薪×16）
     salary_max DECIMAL(12, 2), -- 薪资范围上限（月薪×16）
-    job_opening_status ENUM(
+    jd_status ENUM(
         'Open',   -- 开放招聘中
         'Closed'  -- 已关闭
     ) DEFAULT 'Open', -- 岗位招聘状态
@@ -58,17 +58,22 @@ CREATE TABLE job_description (
 CREATE TABLE candidate (
     candidate_id INT PRIMARY KEY AUTO_INCREMENT, -- 候选人唯一标识
     name VARCHAR(100), -- 候选人姓名
-    email VARCHAR(100) UNIQUE, -- 候选人邮箱（唯一）
+    email VARCHAR(100) UNIQUE, -- 候选人邮箱
     resume_content TEXT, -- 简历内容
+    candidate_status ENUM(
+        'Active',   -- 活跃
+        'Hired',    -- 已录用
+        'Rejected'  -- 已拒绝
+    ) DEFAULT 'Active', -- 候选人状态
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 记录创建时间
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP -- 记录更新时间
 );
 
 CREATE TABLE job_application (
     job_application_id INT PRIMARY KEY AUTO_INCREMENT, -- 求职申请唯一标识
-    job_description_id INT NOT NULL, -- 关联的岗位JD ID
+    jd_id INT NOT NULL, -- 关联的岗位JD ID
     candidate_id INT NOT NULL, -- 关联的候选人ID
-    job_application_stage ENUM(
+    job_application_status ENUM(
         'Assessing',    -- 简历评估中
         'Interviewing', -- 面试进行中
         'Negotiating',  -- 薪资谈判中
@@ -91,6 +96,12 @@ CREATE TABLE schedule (
     start_datetime DATETIME NOT NULL, -- 日程开始时间
     end_datetime DATETIME NOT NULL, -- 日程结束时间
 
+    schedule_status ENUM(
+        'Scheduled',  -- 已安排
+        'Completed',  -- 已完成
+        'Cancelled'   -- 已取消
+    ) DEFAULT 'Scheduled', -- 日程状态
+
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 记录创建时间
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- 记录更新时间
 );
@@ -110,7 +121,6 @@ CREATE TABLE interview (
     score DECIMAL(3, 2) CHECK (score IN (3.0, 3.25, 3.5, 3.75, 4.0)), -- 面试评分（3.0=不推荐 / 3.25=一般 / 3.5=比较推荐 / 3.75=非常推荐 / 4.0=强烈需要）
     feedback TEXT, -- 面试评价内容
 
-    scored_at DATETIME, -- 面试官提交评分的时间
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 记录创建时间
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP -- 记录更新时间
 );
@@ -167,7 +177,7 @@ CREATE TABLE salary (
 CREATE TABLE resource_request (
     resource_request_id INT PRIMARY KEY AUTO_INCREMENT, -- 资源申请唯一标识
     employee_id INT NOT NULL, -- 申请人的员工ID
-    approval_request_stage ENUM(
+    approval_request_status ENUM(
         'Supervisor_Approval', -- 直属上级审批中
         'Finance_Approval',    -- 财务部门审批中
         'Completed',           -- 审批全部通过
@@ -188,9 +198,8 @@ CREATE TABLE resource_request (
 
 CREATE TABLE leave_request (
     leave_request_id INT PRIMARY KEY AUTO_INCREMENT, -- 假勤申请唯一标识
-    approval_request_stage ENUM(
+    approval_request_status ENUM(
         'Supervisor_Approval', -- 直属上级审批中
-        'Finance_Approval',    -- 财务部门审批中
         'Completed',           -- 审批全部通过
         'Rejected',            -- 已驳回
         'Canceled'             -- 已撤销
@@ -256,6 +265,10 @@ CREATE TABLE customer (
         'Platinum',   -- 铂金会员（近6个月实付产品金额超1000刀，享10%产品折扣）
         'Black Gold'  -- 至尊会员（近6个月实付产品金额超6000刀，享20%产品折扣并免运费）
     ) DEFAULT 'None', -- 会员等级
+    customer_status ENUM(
+        'Active',   -- 活跃
+        'Closed'    -- 已关闭
+    ) DEFAULT 'Active', -- 客户状态
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- 记录创建时间
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP -- 记录更新时间
 );
@@ -450,13 +463,16 @@ CREATE TABLE order_item (
     order_item_id INT PRIMARY KEY AUTO_INCREMENT, -- 订单商品项唯一标识
     order_id INT NOT NULL, -- 关联的订单ID
     product_id INT NOT NULL, -- 关联的商品ID
-    unit_price_snapshot DECIMAL(12, 2) NOT NULL, -- 下单时的商品单价快照
+    product_unit_price_snapshot DECIMAL(12, 2) NOT NULL, -- 下单时的商品单价快照
     is_special_offer_snapshot BOOLEAN, -- 下单时是否为特价商品的快照
     is_refundable_snapshot BOOLEAN, -- 下单时是否可退货的快照
     quantity INT NOT NULL, -- 购买数量
-    total_item_amount DECIMAL(12, 2) NOT NULL, -- 该商品项的订单金额（单价 × 数量）
+
+    product_total_amount DECIMAL(12, 2) NOT NULL, -- 该商品项的订单金额（单价 × 数量）
     is_refunded BOOLEAN DEFAULT FALSE, -- 是否已退货
     refunded_quantity INT DEFAULT 0, -- 已退货数量
+    product_total_amount_refunded DECIMAL(12, 2) DEFAULT 0.00, -- 已退货金额
+
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- 记录创建时间
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- 记录更新时间
 );
@@ -620,7 +636,14 @@ CREATE TABLE email (
     subject VARCHAR(255) NOT NULL, -- 邮件主题
     body_content TEXT NOT NULL, -- 邮件正文内容
 
+    email_status ENUM(
+        'Sent', -- 已发送
+        'Failed' -- 发送失败
+        'Revoked' -- 已撤回
+    ) DEFAULT 'Sent', -- 邮件状态
+
     sent_at DATETIME, -- 发送时间
+    revoked_at DATETIME, -- 撤回时间
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- 记录创建时间
 );
 
