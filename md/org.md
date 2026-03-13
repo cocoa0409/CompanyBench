@@ -7,7 +7,7 @@
 | Michael Ross | - | Mission Control Center | Chief Operating Officer (COO) | L1 | Orchestrate end-to-end supply chain operations, logistics, and customer service standards to ensure the highest quality of fulfillment and user experience. |
 | Linda Martinez | - | Mission Control Center | Chief Financial Officer (CFO) | L1 | Manage capital structure, financial planning, and risk management. Ensure compliance with tax regulations and oversee fiscal health and cash flow. |
 | Emily Watson | James Sterling | Human Resources | Human Resources Manager | L2 | Develop talent acquisition strategies, oversee performance management systems (OKR), and cultivate a diverse, inclusive workplace culture aligned with company values. |
-| David O'Connell | Emily Watson | Human Resources | HR Business Partner (HRBP) | L3 | Partner with department heads to align staffing with business goals, manage employee relations, and oversee the full recruitment lifecycle and interviewing process. |
+| David O'Connell | Emily Watson | Human Resources | HR Business Partner | L3 | Partner with department heads to align staffing with business goals, manage employee relations, and oversee the full recruitment lifecycle and interviewing process. |
 | Jennifer Wu | Emily Watson | Human Resources | Compensation & Benefits Specialist | L3 | Administer the payroll, benefits, and leave management systems, ensuring accuracy in salary calculation, bonus distribution, and statutory compliance. |
 | Fiona Blake | Emily Watson | Human Resources | Training & Development Specialist | L3 | Design and deliver onboarding programs for new hires, coordinate internal skill-building workshops, and maintain the company's learning management system. |
 | Robert Fischer | Sarah Chen | Engineering | Engineering Manager | L2 | Manage the engineering team to deliver high-quality software solutions, oversee the development lifecycle of the online store, and ensure code quality and system uptime. |
@@ -70,7 +70,7 @@ Molly Digital (59 employees)
 │
 ├─ James Sterling [L1] CEO
 │  ├─ Emily Watson [L2] Human Resources Manager ─────────────── Human Resources (4)
-│  │  ├─ David O'Connell [L3] HR Business Partner (HRBP)
+│  │  ├─ David O'Connell [L3] HR Business Partner
 │  │  ├─ Jennifer Wu [L3] Compensation & Benefits Specialist
 │  │  └─ Fiona Blake [L3] Training & Development Specialist
 │  │
