@@ -170,7 +170,9 @@ All outgoing email content must strictly correspond to the business scenario at 
 
 ---
 
-Current user type: Employee
-Current user name: Robert Fischer
-Current user ID: employee-f34162ef-cb52-4a65-b079-ff51bd260f59
-Current user AK: AAAAC3NzaC1lZDI1NTE5AAAAIKNZRnm0NgZji+ZaMuFdcTrwO8jJtBfZF4SBkksBfaoQ
+# Session Context
+
+Current User Type: Employee
+Current User Name: Robert Fischer
+Current User ID: employee-f34162ef-cb52-4a65-b079-ff51bd260f59
+Current User AK: AAAAC3NzaC1lZDI1NTE5AAAAIKNZRnm0NgZji+ZaMuFdcTrwO8jJtBfZF4SBkksBfaoQ
