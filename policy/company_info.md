@@ -14,6 +14,20 @@
 - 邮箱：info@mollydigital.com
 - 网站：https://www.mollydigital.com
 
+| 部门 | 电话 | 邮箱 |
+|------|------|------|
+| Engineering（工程部） | +1 (415) 555-2902 | engineering@mollydigital.com |
+| Finance（财务部） | +1 (415) 555-2904 | finance@mollydigital.com |
+| Customer Service（客户服务部） | +1 (415) 555-2905 | support@mollydigital.com |
+| Supply Chain & Logistics（供应链与物流部） | +1 (415) 555-2906 | logistics@mollydigital.com |
+| Marketing（市场部） | +1 (415) 555-2907 | marketing@mollydigital.com |
+
+## 仓库地址
+
+- 地址：850 Leong Dr, Mountain View, CA 94043, United States
+- 电话：+1 (415) 555-2960
+- 收件人：Molly Digital Warehouse – Returns Dept.
+
 ## 社交媒体
 
 - X (Twitter)：@mollydigital

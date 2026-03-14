@@ -96,7 +96,7 @@
 | Action | Description |
 |---|---|
 | `search_tickets` | Query tickets by customer, order, type, status, or priority |
-| `create_ticket` | Create ticket record (Product_Inquiry / Order / Technical_Support / Complaint) |
+| `create_ticket` | Create ticket record ( Order / Logistics / Complaint / System_Issue ) |
 | `update_ticket` | Assign handler, update ticket status and priority |
 | `submit_ticket_response` | Write customer-service response to ticket record and set status to Resolved |
 

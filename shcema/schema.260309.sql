@@ -78,7 +78,6 @@ CREATE TABLE job_application (
     job_application_status ENUM(
         'Assessing',    -- 简历评估中
         'Interviewing', -- 面试进行中
-        'Negotiating',  -- 薪资谈判中
         'Accepted',     -- 已接受Offer
         'Rejected',     -- 未通过
         'Onboarded',    -- 已入职
@@ -598,11 +597,11 @@ CREATE TABLE ticket (
     assignee_employee_id INT, -- 处理工单的客服/仓库人员的员工ID
     
     ticket_type ENUM(
-        'Product_Inquiry',   -- 产品咨询
         'Order',             -- 订单问题
-        'Technical_Support', -- 技术支持
+        'Logistics',         -- 物流问题
         'Complaint',         -- 投诉
-    ) DEFAULT 'Product_Inquiry', -- 工单分类
+        'System_Issue',      -- 系统问题
+    ) DEFAULT 'Order', -- 工单分类
 
     ticket_status ENUM(
         'Open',     -- 已开启，等待处理
