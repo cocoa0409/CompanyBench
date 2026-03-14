@@ -202,6 +202,7 @@ CREATE TABLE leave_request (
     leave_request_id INT PRIMARY KEY AUTO_INCREMENT, -- 假勤申请唯一标识
     approval_request_status ENUM(
         'Supervisor_Approval', -- 直属上级审批中
+        'HRBP_Approval',       -- HRBP审批中
         'Completed',           -- 审批全部通过
         'Rejected',            -- 已驳回
         'Canceled'             -- 已撤销
