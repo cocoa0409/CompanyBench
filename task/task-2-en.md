@@ -29,7 +29,7 @@ This task requires the Agent to complete a customer-facing camera body compariso
 ### Session Context
 
 ```
-Current User Type: Employee
+Current User Type: Customer
 Current User Name: Aleksandr Ivanovich
 Current User ID: customer-c4ec2a86-36c1-4103-b6a2-c817a286c8db
 Current User AK: AAAAC3NzaC1lZDI1NTE5AAAAIBYytISqY7Ut2072Ko4un2zWC8wmYbFL1MIVxtGh4lYl
