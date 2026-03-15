@@ -1,6 +1,6 @@
 # Molly Digital Toolset Design
 
-13 tools, 59 actions.
+13 tools, 61 actions.
 
 ## 1. employee (5 actions)
 
@@ -79,11 +79,12 @@
 | `create_customer` | Create customer account record |
 | `update_customer` | Update customer record; recalculate membership tier from past-6-month completed-order spend |
 
-## 9. order (7 actions)
+## 9. order (8 actions)
 
 | Action | Description |
 |---|---|
 | `search_orders` | Query orders by customer, status, or time range |
+| `route_order_status` | Transition order status along the workflow |
 | `confirm_payment` | Match incoming bank transfer to order; update payment and order status |
 | `cancel_order` | Update order status to Canceled |
 | `confirm_receipt` | Update order status to Completed; add product spend to membership accumulation |
@@ -111,7 +112,7 @@
 | `forward_email` | Forward an email to new recipients |
 | `reply_email` | Reply to an email (reply-to or reply-all) |
 
-## 12. document (4 actions)
+## 12. document (5 actions)
 
 | Action | Description |
 |---|---|
@@ -119,6 +120,7 @@
 | `list_docs` | Get paginated document list (filterable by type and status) |
 | `read_doc` | Retrieve full document content by ID |
 | `create_doc` | Create and publish document record (Internal for staff, External for customers) |
+| `update_doc` | Update document content or metadata by ID |
 
 
 ## 13. bash (1 action)

@@ -32,6 +32,7 @@ This task requires the Agent to complete an end-to-end interview advancement wor
 Current User Type: Employee
 Current User Name: Sarah Chen
 Current User ID: employee-f34162ef-cb52-4a65-b079-ff51bd260f59
+Current User AK: AAAAC3NzaC1lZDI1NTE5AAAAIKNZRnm0NgZji+ZaMuFdcTrwO8jJtBfZF4SBkksBfaoQ
 ```
 
 ### Prompt
