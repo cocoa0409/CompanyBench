@@ -1,7 +1,29 @@
 [project]
 name = "companybench"
-version = "0.1.0"
+version = "0.1.1"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.9"
-dependencies = []
+requires-python = ">=3.12"
+dependencies = [
+    "litellm",
+    "tenacity",
+    "loguru",
+    "lxml",
+    "aiofiles",
+    "tqdm",
+    "pydantic",
+    "jsonschema",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+]
+
+[[tool.uv.index]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default = true
+
+[tool.setuptools.packages.find]
+include = ["company_bench*"]
